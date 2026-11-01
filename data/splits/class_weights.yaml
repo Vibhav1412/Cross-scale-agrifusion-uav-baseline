@@ -1,0 +1,12 @@
+class_counts:
+  crop: 500245
+  soil: 109045845
+  weed: 873110
+class_percentages:
+  crop: 0.45
+  soil: 98.76
+  weed: 0.79
+normalized_weights:
+- 0.0087
+- 1.9017
+- 1.0896
