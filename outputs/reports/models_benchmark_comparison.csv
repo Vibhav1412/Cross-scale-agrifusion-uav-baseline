@@ -1,0 +1,4 @@
+Model,Status,Test mIoU (%),Test mDice (%),Crop IoU (%),Weed IoU (%),Macro Recall (%),Macro Prec (%)
+UNET,Trained & Evaluated,50.96000000000001,61.72,28.96,26.009999999999998,89.0,52.72
+DEEPLAB,Trained & Evaluated,51.7,62.160000000000004,41.11,17.73,92.33,53.690000000000005
+BASELINE_CNN,Trained & Evaluated,42.27,50.5,20.830000000000002,10.81,76.29,44.92
