@@ -1,0 +1,76 @@
+# Cross-Scale UAV–Satellite Data Fusion: Precision Agriculture Baseline
+# Project ID: PW26_YBS_02 (PES University)
+# Configuration File
+
+project:
+  name: "CrossScale-AgriFusion-UAV-Baseline"
+  version: "1.0.0"
+  institution: "PES University"
+  team: ["Arnav Choudhary", "Vibhav M", "Vainik", "Manish Bala"]
+  guide: "Prof. Yoga B S"
+  seed: 42
+
+data:
+  raw_dir: "C:/Users/Admin/Downloads/Tiles/Tiles"
+  processed_dir: "data/processed"
+  splits_dir: "data/splits"
+  image_size: [256, 256]
+  patch_size: 256
+  stride: 256
+  channels: 3 # RGB baseline
+  
+  # Semantic classes
+  num_classes: 3
+  classes:
+    0: "soil_background"
+    1: "crop"
+    2: "weed"
+    
+  # WeedMap dataset structure
+  rededge_subsets: ["000", "001", "002", "003", "004"]
+  sequoia_subsets: ["005", "006", "007"]
+  
+  # Cross-field split strategy
+  train_subsets: ["000", "001", "002", "004", "006", "007"]
+  val_subsets: ["001"] # Or stratified hold-out from train
+  test_subsets: ["003", "005"] # Held-out fields for cross-field evaluation
+
+augmentation:
+  horizontal_flip_prob: 0.5
+  vertical_flip_prob: 0.5
+  random_rotate_prob: 0.5
+  brightness_factor: 0.2
+  contrast_factor: 0.2
+
+model:
+  name: "unet" # Options: "unet", "deeplabv3plus", "baseline_cnn"
+  encoder: "resnet18"
+  in_channels: 3
+  num_classes: 3
+  pretrained: true
+
+training:
+  batch_size: 8
+  epochs: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  loss: "combined" # CrossEntropy + Dice Loss
+  ce_weight: 0.5
+  dice_weight: 0.5
+  lr_scheduler: "cosine" # "cosine" or "step"
+  early_stopping_patience: 10
+  save_dir: "outputs/checkpoints"
+
+evaluation:
+  metrics: ["iou", "dice", "precision", "recall", "f1"]
+  confusion_matrix: true
+  save_predictions: true
+  predictions_dir: "outputs/predictions"
+
+analytics:
+  min_weed_pixels_threshold: 10
+  infestation_levels:
+    low: 5.0 # percent
+    moderate: 15.0 # percent
+    high: 30.0 # percent
+
