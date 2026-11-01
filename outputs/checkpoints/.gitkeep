@@ -1,0 +1,5 @@
+# Checkpoints directory
+# Trained model weights are generated during training:
+# python main.py --action train --model unet
+# python main.py --action train --model deeplab
+# python main.py --action train --model baseline_cnn
