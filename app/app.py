@@ -50,19 +50,22 @@ st.markdown("""
     .main-header {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #1e3a8a;
+        color: #38bdf8;
         margin-bottom: 0.2rem;
+        text-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
     }
     .sub-header {
-        font-size: 1.1rem;
-        color: #4b5563;
+        font-size: 1.05rem;
+        color: #94a3b8;
         margin-bottom: 1.5rem;
     }
     .metric-card {
-        background-color: #f3f4f6;
+        background-color: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.2);
         border-radius: 8px;
         padding: 1rem;
         border-left: 5px solid #10b981;
+        color: #f1f5f9;
     }
 </style>
 """, unsafe_allow_html=True)
