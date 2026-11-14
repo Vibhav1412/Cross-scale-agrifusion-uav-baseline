@@ -87,8 +87,10 @@ def train_model(args):
     elif model_name == "segformer_b2":
         from models.segformer import build_segformer
         model = build_segformer(num_classes=num_classes, pretrained=pretrained, variant="b2")
+    elif model_name in ["resnet50", "unet_resnet50"]:
+        model = build_unet(num_classes=num_classes, pretrained=pretrained, backbone="resnet50")
     elif model_name == "unet":
-        model = build_unet(num_classes=num_classes, pretrained=pretrained)
+        model = build_unet(num_classes=num_classes, pretrained=pretrained, backbone="resnet18")
     elif model_name == "deeplab":
         model = build_deeplabv3plus(num_classes=num_classes, pretrained=pretrained)
     elif model_name == "baseline_cnn":
