@@ -36,7 +36,7 @@ def compare_all_models():
     print(arch_df.to_string(index=False))
     
     # Check evaluated checkpoints
-    models = ["unet", "deeplab", "baseline_cnn"]
+    models = ["segformer", "unet", "deeplab", "baseline_cnn"]
     model_eval_records = []
     
     for m in models:
