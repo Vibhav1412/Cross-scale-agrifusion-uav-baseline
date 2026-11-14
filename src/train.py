@@ -81,7 +81,13 @@ def train_model(args):
     print(f"Loaded {len(val_loader.dataset)} validation tiles ({len(val_loader)} batches)", flush=True)
     
     # 2. Model Selection
-    if model_name == "unet":
+    if model_name in ["segformer", "segformer_b0"]:
+        from models.segformer import build_segformer
+        model = build_segformer(num_classes=num_classes, pretrained=pretrained, variant="b0")
+    elif model_name == "segformer_b2":
+        from models.segformer import build_segformer
+        model = build_segformer(num_classes=num_classes, pretrained=pretrained, variant="b2")
+    elif model_name == "unet":
         model = build_unet(num_classes=num_classes, pretrained=pretrained)
     elif model_name == "deeplab":
         model = build_deeplabv3plus(num_classes=num_classes, pretrained=pretrained)
