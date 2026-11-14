@@ -74,6 +74,7 @@ st.markdown("""
 st.sidebar.title("🌿 Architecture & Model")
 model_options = {
     "SegFormer (MiT-B0) [Primary Proposed]": "segformer",
+    "U-Net (ResNet50) [Heavyweight Baseline]": "resnet50",
     "U-Net (ResNet18) [Phase-I Baseline]": "unet",
     "DeepLabV3+ (ResNet18)": "deeplab",
     "Basic CNN Segmenter": "baseline_cnn"
