@@ -28,6 +28,7 @@ def main():
             "evaluate",
             "predict",
             "compare",
+            "prescribe",
             "app"
         ],
         help="Action to execute."
@@ -46,9 +47,13 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--resume", type=str, default=None)
     
-    # Inference arguments
+    # Inference & Prescription arguments
     parser.add_argument("--image", type=str, default=None)
     parser.add_argument("--checkpoint", type=str, default=None)
+    parser.add_argument("--field_ha", type=float, default=5.0, help="Field area in hectares")
+    parser.add_argument("--base_rate", type=float, default=200.0, help="Broadcast rate in L/ha")
+    parser.add_argument("--cost_per_l", type=float, default=650.0, help="Chemical cost in INR/L")
+    parser.add_argument("--grid_size", type=int, default=16, help="Spraying grid resolution")
     
     args = parser.parse_args()
     
@@ -139,6 +144,60 @@ def main():
         plt.savefig(out_path, dpi=150)
         plt.close()
         print(f"Saved prediction visual: {out_path}")
+        
+    elif args.action == "prescribe":
+        from PIL import Image
+        import numpy as np
+        from src.predict import load_inference_model, predict_large_image
+        from src.prescription import (
+            generate_prescription_grid,
+            compute_prescription_economics,
+            generate_prescription_visualization,
+            export_dji_agras_mission,
+            export_geojson_prescription
+        )
+        from src.database import log_prescription
+        
+        img_path = args.image or "C:/Users/Admin/Downloads/Tiles/Tiles/RedEdge/003/tile/RGB/frame0008.png"
+        print(f"\n{'='*70}\nVARIABLE RATE APPLICATION (VRA) PRESCRIPTION ENGINE\n{'='*70}")
+        print(f"Target Field Image: {img_path}")
+        print(f"Field Area: {args.field_ha} ha | Base Rate: {args.base_rate} L/ha | Cost: ₹{args.cost_per_l}/L")
+        
+        image_pil = Image.open(img_path).convert("RGB")
+        model, device = load_inference_model(args.checkpoint, model_name=args.model)
+        
+        pred_mask, _ = predict_large_image(model, image_pil, device)
+        p_grid = generate_prescription_grid(pred_mask, grid_size=args.grid_size, base_rate_l_ha=args.base_rate)
+        economics = compute_prescription_economics(
+            p_grid,
+            field_area_ha=args.field_ha,
+            base_rate_l_ha=args.base_rate,
+            chemical_cost_per_l_inr=args.cost_per_l
+        )
+        
+        sav = economics["savings"]
+        conv = economics["conventional"]
+        ai = economics["ai_precision"]
+        
+        print("\n--- PRESCRIPTION & ECONOMIC SAVINGS REPORT ---")
+        print(f"Conventional Broadcast Volume:  {conv['total_volume_liters']:,.1f} L (Cost: ₹{conv['total_cost_inr']:,.0f})")
+        print(f"AI Precision Variable Rate Vol: {ai['total_volume_liters']:,.1f} L (Cost: ₹{ai['total_cost_inr']:,.0f})")
+        print(f"Herbicide Volume Slashed:       {sav['volume_saved_liters']:,.1f} L ({sav['volume_reduction_pct']} % reduction)")
+        print(f"Direct Financial Savings:       ₹{sav['financial_saved_inr']:,.0f} (${sav['financial_saved_usd']:,.2f} USD)")
+        print(f"Nozzle Shutoff Rate:            {sav['nozzle_shutoff_pct']} % of field ({p_grid['tier_counts'][0]}/{p_grid['total_cells']} zones zero-spray)")
+        print(f"Active Pesticide Runoff Spared: {sav['active_chem_spared_kg']:,.1f} kg active ingredient")
+        
+        out_vis = os.path.join(PROJECT_ROOT, "outputs/reports/cli_prescription_map.png")
+        generate_prescription_visualization(np.array(image_pil), p_grid, economics, output_path=out_vis)
+        print(f"\n[SAVED] Prescription visual report: {out_vis}")
+        
+        df_dji = export_dji_agras_mission(p_grid)
+        out_dji = os.path.join(PROJECT_ROOT, "outputs/reports/dji_agras_drone_mission.csv")
+        df_dji.to_csv(out_dji, index=False)
+        print(f"[SAVED] DJI Agras Drone Spraying Mission ({len(df_dji)} GPS Waypoints): {out_dji}")
+        
+        log_id = log_prescription(img_path, economics)
+        print(f"[DATABASE] Logged prescription to agrifusion.db (Record #{log_id})\n{'='*70}")
         
     elif args.action == "app":
         print("Launching Streamlit Web Dashboard...")
