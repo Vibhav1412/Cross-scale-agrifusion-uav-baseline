@@ -98,56 +98,49 @@ flowchart LR
     M <--> N
 ```
 
-### Detailed Neural Architecture: Proposed ResNet18 U-Net
-Our primary proposed architecture utilizes a **ResNet18** convolutional backbone pre-trained on ImageNet, coupled with a symmetrical transpose-convolution decoder and feature skip connections:
+### Detailed Neural Architecture: Proposed SegFormer (MiT-B0 / Vision Transformer)
+Addressing mentor guidance to surpass traditional 2015 CNN baselines, our new primary proposed architecture adopts **SegFormer (MiT-B0)** (NeurIPS 2021). It features a 4-stage hierarchical Mix-Transformer encoder paired with an All-MLP lightweight decoder and the **`CrossScaleSatelliteFusionAdapter`**:
 
 ```
 [Input UAV Patch (3 x 256 x 256)]
        │
        ▼
-[ResNet18 Initial Conv & MaxPool] ───────────────► Skip 1 (64 ch) ───────────────┐
-       │ (64 x 128 x 128)                                                         │
-       ▼                                                                          │
-[ResNet Layer 1 (Residual)] ─────────────────────► Skip 2 (64 ch) ────────┐       │
-       │ (64 x 64 x 64)                                                   │       │
-       ▼                                                                  │       │
-[ResNet Layer 2 (Residual)] ─────────────────────► Skip 3 (128 ch) ┐      │       │
-       │ (128 x 32 x 32)                                           │      │       │
-       ▼                                                           │      │       │
-[ResNet Layer 3 (Residual)] ───────────────► Skip 4 (256 ch) ┐     │      │       │
-       │ (256 x 16 x 16)                                     │     │      │       │
-       ▼                                                     │     │      │       │
-[Bottleneck Layer 4 + MC Dropout (p=0.2)]                    │     │      │       │
-       │ (512 x 8 x 8)                                       │     │      │       │
-       ▼                                                     │     │      │       │
-[Decoder Block 4 (ConvTrans2d)] ◄────────────────────────────┘     │      │       │
-       │ (256 x 16 x 16)                                           │      │       │
-       ▼                                                           │      │       │
-[Decoder Block 3 (ConvTrans2d)] ◄──────────────────────────────────┘      │       │
-       │ (128 x 32 x 32)  ◄─── [CrossScaleFusionAdapter (Sentinel-2 Injection)]   │
-       ▼                                                                  │       │
-[Decoder Block 2 (ConvTrans2d)] ◄─────────────────────────────────────────┘       │
-       │ (64 x 64 x 64)                                                           │
-       ▼                                                                          │
-[Decoder Block 1 (ConvTrans2d)] ◄─────────────────────────────────────────────────┘
-       │ (32 x 128 x 128)
+[Stage 1: Overlapped Patch Merge (4x4, s=4)] ──► Efficient Self-Attention (R=8) + Mix-FFN (32 x 64 x 64)   ────────┐
+       │                                                                                                    │
+       ▼                                                                                                    │
+[Stage 2: Overlapped Patch Merge (2x2, s=2)] ──► Efficient Self-Attention (R=4) + Mix-FFN (64 x 32 x 32)   ───┐    │
+       │                                                                                                    │    │
+       ▼                                                                                                    │    │
+[Stage 3: Overlapped Patch Merge (2x2, s=2)] ──► Efficient Self-Attention (R=2) + Mix-FFN (160 x 16 x 16)  ──┼─┐  │
+       │                                                                                                    │ │  │
+       ▼                                                                                                    │ │  │
+[Stage 4: Overlapped Patch Merge (2x2, s=2)] ──► Efficient Self-Attention (R=1) + Mix-FFN (256 x 8 x 8)   ──┼─┼──┘
+       │                                                                                                    │ │  │
+       ▼                                                                                                    │ │  │
+[All-MLP Multi-Level Decoder] ◄─────────────────────────────────────────────────────────────────────────────┴─┴──┘
+       │ Linear Projections to C=256 + 4x Bilinear Upsampling + Concat (1024 ch) -> Linear Fusion (256 ch)
        ▼
-[Final Upsampling + 1x1 Conv Head]
+[Phase-II CrossScaleSatelliteFusionAdapter] ◄─── [Sentinel-2 Multi-Spectral Tokens (B2, B3, B4, B8, B8A)]
+       │ Multi-Head Cross-Attention: Q = UAV Tokens, K,V = Satellite Tokens + Gated Residual Connection
+       ▼
+[Monte Carlo Dropout Head (p=0.2, T=8 stochastic passes)]
        │
        ▼
-[Softmax Logits: Soil (0), Sugar Beet Crop (1), Weed (2)] (3 x 256 x 256)
+[Final 1x1 Conv Softmax Classifier] -> [Soil (0), Sugar Beet Crop (1), Weed (2)] (3 x 256 x 256)
 ```
 
 ---
 
 ## 📊 Empirical Benchmarks
 
-All three architectures were trained for 10 epochs under identical conditions using Adam ($\text{lr} = 10^{-3}$) with Cosine Annealing scheduling and evaluated on the strictly held-out unseen **Flight 003** test set:
+All four architectures were trained for 10 epochs under identical conditions using Adam ($\text{lr} = 10^{-3}$) with Cosine Annealing scheduling and evaluated on the strictly held-out unseen **Flight 003** test set:
 
-| Architecture | Parameters | Model Size | CPU Latency ($B=4$) | Test mIoU (%) | Test mDice (%) | Crop IoU (%) | Weed IoU (%) | Macro Recall (%) | Macro Prec (%) |
+| Architecture | Parameters | Model Size | Per-Image Latency | Test mIoU (%) | Test mDice (%) | Crop IoU (%) | Weed IoU (%) | Macro Recall (%) | Macro Prec (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **ResNet18 U-Net (Proposed)** | **14.33 M** | **54.67 MB** | **139.20 ms** | **50.96%** | **61.72%** | **28.96%** | **26.01%** | **89.00%** | **52.72%** |
-| **DeepLabV3+** | 16.60 M | 63.34 MB | 137.37 ms | 51.70% | 62.16% | 41.11% | 17.73% | 92.33% | 53.69% |
+| **SegFormer MiT-B0 (Primary Proposed)** | **3.98 M** | **15.20 MB** | **13.17 ms** | **54.33%** | **65.32%** | **42.13%** | **23.44%** | **91.11%** | **56.30%** |
+| **ResNet18 U-Net (Phase-I Baseline)** | 14.33 M | 54.67 MB | 34.96 ms | 50.96% | 61.72% | 28.96% | 26.01% | 89.00% | 52.72% |
+| **DeepLabV3+ (ResNet18)** | 16.60 M | 63.34 MB | 33.63 ms | 51.70% | 62.16% | 41.11% | 17.73% | 92.33% | 53.69% |
+| **Basic CNN Segmenter (Ablation)** | 0.80 M | 3.06 MB | 32.41 ms | 42.27% | 50.50% | 20.83% | 10.81% | 76.29% | 44.92% |
 | **Basic CNN** | 0.80 M | 3.06 MB | 141.17 ms | 42.27% | 50.50% | 20.83% | 10.81% | 76.29% | 44.92% |
 
 ### Key Scientific Findings:
