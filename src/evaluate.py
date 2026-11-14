@@ -57,7 +57,13 @@ def evaluate_model(args):
     print(f"Loaded {len(test_loader.dataset)} test tiles ({len(test_loader)} batches)")
     
     # 2. Build Model & Load Checkpoint
-    if model_name == "unet":
+    if model_name in ["segformer", "segformer_b0"]:
+        from models.segformer import build_segformer
+        model = build_segformer(num_classes=num_classes, pretrained=False, variant="b0")
+    elif model_name == "segformer_b2":
+        from models.segformer import build_segformer
+        model = build_segformer(num_classes=num_classes, pretrained=False, variant="b2")
+    elif model_name == "unet":
         model = build_unet(num_classes=num_classes, pretrained=False)
     elif model_name == "deeplab":
         model = build_deeplabv3plus(num_classes=num_classes, pretrained=False)
