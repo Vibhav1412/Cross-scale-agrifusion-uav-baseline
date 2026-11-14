@@ -33,7 +33,7 @@ def main():
         help="Action to execute."
     )
     # Training & Model arguments
-    parser.add_argument("--model", type=str, default="unet", choices=["unet", "deeplab", "baseline_cnn"])
+    parser.add_argument("--model", type=str, default="segformer", choices=["segformer", "segformer_b0", "segformer_b2", "unet", "deeplab", "baseline_cnn"])
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--img_size", type=int, default=256)
