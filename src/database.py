@@ -20,7 +20,7 @@ def get_connection(db_path=None):
     return conn
 
 def init_db(db_path=None):
-    """Initializes the SQLite database and creates the predictions table."""
+    """Initializes the SQLite database and creates tables."""
     conn = get_connection(db_path)
     cursor = conn.cursor()
     cursor.execute("""
@@ -39,8 +39,68 @@ def init_db(db_path=None):
             inference_time_ms REAL
         )
     """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS prescriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            image_name TEXT NOT NULL,
+            field_area_ha REAL,
+            base_rate_l_ha REAL,
+            conventional_volume_l REAL,
+            precision_volume_l REAL,
+            volume_reduction_pct REAL,
+            financial_saved_inr REAL,
+            financial_saved_usd REAL,
+            nozzle_shutoff_pct REAL,
+            active_chem_spared_kg REAL
+        )
+    """)
     conn.commit()
     conn.close()
+
+def log_prescription(image_name: str, economics: dict, db_path=None):
+    """Inserts a precision prescription calculation into the prescriptions table."""
+    init_db(db_path)
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sav = economics.get("savings", {})
+    conv = economics.get("conventional", {})
+    ai = economics.get("ai_precision", {})
+
+    cursor.execute("""
+        INSERT INTO prescriptions (
+            timestamp, image_name, field_area_ha, base_rate_l_ha,
+            conventional_volume_l, precision_volume_l, volume_reduction_pct,
+            financial_saved_inr, financial_saved_usd, nozzle_shutoff_pct,
+            active_chem_spared_kg
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        timestamp, os.path.basename(image_name),
+        economics.get("field_area_ha", 5.0),
+        economics.get("base_rate_l_ha", 200.0),
+        conv.get("total_volume_liters", 0.0),
+        ai.get("total_volume_liters", 0.0),
+        sav.get("volume_reduction_pct", 0.0),
+        sav.get("financial_saved_inr", 0.0),
+        sav.get("financial_saved_usd", 0.0),
+        sav.get("nozzle_shutoff_pct", 0.0),
+        sav.get("active_chem_spared_kg", 0.0)
+    ))
+    conn.commit()
+    inserted_id = cursor.lastrowid
+    conn.close()
+    return inserted_id
+
+def get_prescription_history(limit: int = 100, db_path=None) -> pd.DataFrame:
+    """Retrieves prescription logs as a pandas DataFrame."""
+    init_db(db_path)
+    conn = get_connection(db_path)
+    query = f"SELECT * FROM prescriptions ORDER BY id DESC LIMIT {limit}"
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
 
 def log_prediction(
     image_name: str,
