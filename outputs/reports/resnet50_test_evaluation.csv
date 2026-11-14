@@ -1,0 +1,10 @@
+Metric,Value
+mIoU,0.511
+Mean Dice (mDice),0.618
+Macro Precision,0.5271
+Macro Recall,0.946
+Soil IoU,0.9643
+Crop IoU,0.3676
+Weed IoU,0.201
+Crop Dice,0.5376
+Weed Dice,0.3347
