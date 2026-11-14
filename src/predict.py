@@ -32,14 +32,23 @@ def load_inference_model(checkpoint_path=None, model_name=None, device=None):
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     if checkpoint_path is None:
-        segformer_path = os.path.join(PROJECT_ROOT, "outputs/checkpoints/segformer_best.pth")
-        unet_path = os.path.join(PROJECT_ROOT, "outputs/checkpoints/unet_best.pth")
-        if os.path.exists(segformer_path):
-            ckpt_path = segformer_path
-            detected_model = "segformer"
+        if model_name:
+            named_path = os.path.join(PROJECT_ROOT, f"outputs/checkpoints/{model_name}_best.pth")
+            if os.path.exists(named_path):
+                ckpt_path = named_path
+                detected_model = model_name
+            else:
+                ckpt_path = os.path.join(PROJECT_ROOT, "outputs/checkpoints/segformer_best.pth")
+                detected_model = "segformer"
         else:
-            ckpt_path = unet_path
-            detected_model = "unet"
+            segformer_path = os.path.join(PROJECT_ROOT, "outputs/checkpoints/segformer_best.pth")
+            unet_path = os.path.join(PROJECT_ROOT, "outputs/checkpoints/unet_best.pth")
+            if os.path.exists(segformer_path):
+                ckpt_path = segformer_path
+                detected_model = "segformer"
+            else:
+                ckpt_path = unet_path
+                detected_model = "unet"
     else:
         ckpt_path = checkpoint_path
         detected_model = None
