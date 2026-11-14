@@ -128,3 +128,4 @@ for fpath, msg in commits:
         print(f"File not found: {fpath}")
 
 print(f"\n[DONE] Successfully created {count} granular git commits!")
+
