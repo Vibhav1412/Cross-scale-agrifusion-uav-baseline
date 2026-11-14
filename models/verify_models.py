@@ -40,7 +40,8 @@ def verify_all_models():
     from models.segformer import build_segformer
     models = {
         "SegFormer (MiT-B0) [New Primary Proposed]": build_segformer(num_classes=3, pretrained=False, variant="b0"),
-        "U-Net (ResNet18) [Phase-I Baseline]": build_unet(num_classes=3, pretrained=False),
+        "U-Net (ResNet50) [Heavyweight Baseline]": build_unet(num_classes=3, pretrained=False, backbone="resnet50"),
+        "U-Net (ResNet18) [Phase-I Baseline]": build_unet(num_classes=3, pretrained=False, backbone="resnet18"),
         "DeepLabV3+ (ResNet18)": build_deeplabv3plus(num_classes=3, pretrained=False),
         "Basic CNN Segmenter": build_baseline_cnn(num_classes=3)
     }
