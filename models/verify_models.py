@@ -37,8 +37,10 @@ def verify_all_models():
     dummy_input = torch.randn(4, 3, 256, 256, device=device)
     dummy_aux = torch.randn(4, 16, 128, 128, device=device) # For Phase-II fusion hook
     
+    from models.segformer import build_segformer
     models = {
-        "U-Net (ResNet18) [Proposed Baseline]": build_unet(num_classes=3, pretrained=False),
+        "SegFormer (MiT-B0) [New Primary Proposed]": build_segformer(num_classes=3, pretrained=False, variant="b0"),
+        "U-Net (ResNet18) [Phase-I Baseline]": build_unet(num_classes=3, pretrained=False),
         "DeepLabV3+ (ResNet18)": build_deeplabv3plus(num_classes=3, pretrained=False),
         "Basic CNN Segmenter": build_baseline_cnn(num_classes=3)
     }
