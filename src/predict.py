@@ -55,6 +55,8 @@ def load_inference_model(checkpoint_path=None, model_name=None, device=None):
             name = "deeplab"
         elif "baseline" in ckpt_path.lower() or "cnn" in ckpt_path.lower():
             name = "baseline_cnn"
+        elif "50" in ckpt_path.lower():
+            name = "resnet50"
         else:
             name = "unet"
 
@@ -65,8 +67,10 @@ def load_inference_model(checkpoint_path=None, model_name=None, device=None):
         model = build_deeplabv3plus(num_classes=3, pretrained=False)
     elif "baseline" in name:
         model = build_baseline_cnn(num_classes=3)
+    elif "50" in name:
+        model = build_unet(num_classes=3, pretrained=False, backbone="resnet50")
     else:
-        model = build_unet(num_classes=3, pretrained=False)
+        model = build_unet(num_classes=3, pretrained=False, backbone="resnet18")
         
     checkpoint = torch.load(ckpt_path, map_location=device)
     if "model_state_dict" in checkpoint:
