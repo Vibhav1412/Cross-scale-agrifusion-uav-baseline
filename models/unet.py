@@ -11,7 +11,10 @@ Features:
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.models import (
+    resnet18, ResNet18_Weights,
+    resnet50, ResNet50_Weights
+)
 
 class ConvBlock(nn.Module):
     """Double Convolution Block: (Conv2d -> BatchNorm -> ReLU) x 2"""
@@ -73,7 +76,7 @@ class DecoderBlock(nn.Module):
 
 class ResNetUNet(nn.Module):
     """
-    U-Net with ResNet18 Backbone for UAV Crop-Weed Segmentation.
+    U-Net with ResNet Backbone (ResNet18 or ResNet50) for UAV Crop-Weed Segmentation.
     3-class output: 0=Soil/Background, 1=Crop, 2=Weed.
     """
     def __init__(
@@ -82,18 +85,29 @@ class ResNetUNet(nn.Module):
         in_channels=3,
         pretrained=True,
         dropout_prob=0.1,
-        satellite_aux_channels=16 # Configurable for Phase-II
+        satellite_aux_channels=16, # Configurable for Phase-II
+        backbone="resnet18"
     ):
         super().__init__()
         self.num_classes = num_classes
         self.in_channels = in_channels
+        self.backbone_name = backbone.lower()
 
-        # 1. ResNet18 Encoder
-        try:
-            weights = ResNet18_Weights.DEFAULT if pretrained else None
-            base_model = resnet18(weights=weights)
-        except Exception:
-            base_model = resnet18(weights=None)
+        # 1. ResNet Encoder (ResNet18 or ResNet50)
+        if "50" in self.backbone_name:
+            try:
+                weights = ResNet50_Weights.DEFAULT if pretrained else None
+                base_model = resnet50(weights=weights)
+            except Exception:
+                base_model = resnet50(weights=None)
+            enc_channels = [64, 256, 512, 1024, 2048]
+        else: # Default ResNet18
+            try:
+                weights = ResNet18_Weights.DEFAULT if pretrained else None
+                base_model = resnet18(weights=weights)
+            except Exception:
+                base_model = resnet18(weights=None)
+            enc_channels = [64, 64, 128, 256, 512]
 
         if in_channels != 3:
             self.initial = nn.Sequential(
@@ -110,27 +124,36 @@ class ResNetUNet(nn.Module):
 
         # Encoder stages
         self.maxpool = base_model.maxpool      # /4,  64 channels
-        self.layer1 = base_model.layer1        # /4,  64 channels
-        self.layer2 = base_model.layer2        # /8,  128 channels
-        self.layer3 = base_model.layer3        # /16, 256 channels
-        self.layer4 = base_model.layer4        # /32, 512 channels
+        self.layer1 = base_model.layer1        # /4,  enc_channels[1]
+        self.layer2 = base_model.layer2        # /8,  enc_channels[2]
+        self.layer3 = base_model.layer3        # /16, enc_channels[3]
+        self.layer4 = base_model.layer4        # /32, enc_channels[4]
 
         # 2. Decoder Stages
-        self.dec4 = DecoderBlock(512, 256, 256, dropout_prob=dropout_prob)
-        self.dec3 = DecoderBlock(256, 128, 128, dropout_prob=dropout_prob)
-        self.dec2 = DecoderBlock(128, 64, 64, dropout_prob=dropout_prob)
-        self.dec1 = DecoderBlock(64, 64, 32, dropout_prob=dropout_prob)
-
-        # Phase-II Modular Cross-Scale Fusion Adapter
-        self.fusion_adapter = CrossScaleFusionAdapter(satellite_aux_channels, 32)
-
-        # Final upsample to original resolution (H, W)
-        self.final_upsample = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
-            nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True)
-        )
+        if "50" in self.backbone_name:
+            self.dec4 = DecoderBlock(2048, 1024, 512, dropout_prob=dropout_prob)
+            self.dec3 = DecoderBlock(512, 512, 256, dropout_prob=dropout_prob)
+            self.dec2 = DecoderBlock(256, 256, 128, dropout_prob=dropout_prob)
+            self.dec1 = DecoderBlock(128, 64, 64, dropout_prob=dropout_prob)
+            self.fusion_adapter = CrossScaleFusionAdapter(satellite_aux_channels, 64)
+            self.final_upsample = nn.Sequential(
+                nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
+                nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(32),
+                nn.ReLU(inplace=True)
+            )
+        else:
+            self.dec4 = DecoderBlock(512, 256, 256, dropout_prob=dropout_prob)
+            self.dec3 = DecoderBlock(256, 128, 128, dropout_prob=dropout_prob)
+            self.dec2 = DecoderBlock(128, 64, 64, dropout_prob=dropout_prob)
+            self.dec1 = DecoderBlock(64, 64, 32, dropout_prob=dropout_prob)
+            self.fusion_adapter = CrossScaleFusionAdapter(satellite_aux_channels, 32)
+            self.final_upsample = nn.Sequential(
+                nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
+                nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(32),
+                nn.ReLU(inplace=True)
+            )
 
         # 3. Final 1x1 Segmentation Head
         self.classifier = nn.Conv2d(32, num_classes, kernel_size=1)
@@ -147,16 +170,16 @@ class ResNetUNet(nn.Module):
         # Encoder forward pass
         s0 = self.initial(x)         # (B, 64, H/2, W/2)
         s1 = self.maxpool(s0)        # (B, 64, H/4, W/4)
-        s1 = self.layer1(s1)         # (B, 64, H/4, W/4)
-        s2 = self.layer2(s1)         # (B, 128, H/8, W/8)
-        s3 = self.layer3(s2)         # (B, 256, H/16, W/16)
-        s4 = self.layer4(s3)         # (B, 512, H/32, W/32)
+        s1 = self.layer1(s1)         # (B, enc_channels[1], H/4, W/4)
+        s2 = self.layer2(s1)         # (B, enc_channels[2], H/8, W/8)
+        s3 = self.layer3(s2)         # (B, enc_channels[3], H/16, W/16)
+        s4 = self.layer4(s3)         # (B, enc_channels[4], H/32, W/32)
 
         # Decoder forward pass with skip connections
-        d4 = self.dec4(s4, s3)       # (B, 256, H/16, W/16)
-        d3 = self.dec3(d4, s2)       # (B, 128, H/8, W/8)
-        d2 = self.dec2(d3, s1)       # (B, 64, H/4, W/4)
-        d1 = self.dec1(d2, s0)       # (B, 32, H/2, W/2)
+        d4 = self.dec4(s4, s3)       # /16
+        d3 = self.dec3(d4, s2)       # /8
+        d2 = self.dec2(d3, s1)       # /4
+        d1 = self.dec1(d2, s0)       # /2
 
         # Phase-II Fusion Hook (if satellite feature map is supplied)
         if auxiliary_satellite_feat is not None:
@@ -174,11 +197,12 @@ class ResNetUNet(nn.Module):
             if isinstance(m, nn.Dropout2d):
                 m.train()
 
-def build_unet(num_classes=3, in_channels=3, pretrained=True, dropout_prob=0.1, satellite_aux_channels=16):
+def build_unet(num_classes=3, in_channels=3, pretrained=True, dropout_prob=0.1, satellite_aux_channels=16, backbone="resnet18"):
     return ResNetUNet(
         num_classes=num_classes,
         in_channels=in_channels,
         pretrained=pretrained,
         dropout_prob=dropout_prob,
-        satellite_aux_channels=satellite_aux_channels
+        satellite_aux_channels=satellite_aux_channels,
+        backbone=backbone
     )
