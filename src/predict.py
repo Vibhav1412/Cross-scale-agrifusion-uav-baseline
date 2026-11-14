@@ -23,16 +23,51 @@ import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 
 from models.unet import build_unet
+from models.segformer import build_segformer
+from models.deeplab import build_deeplabv3plus
+from models.baseline_cnn import build_baseline_cnn
 from src.analytics import compute_field_coverage
 
-def load_inference_model(checkpoint_path=None, device=None):
+def load_inference_model(checkpoint_path=None, model_name=None, device=None):
     device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    ckpt_path = checkpoint_path or os.path.join(PROJECT_ROOT, "outputs/checkpoints/unet_best.pth")
     
+    if checkpoint_path is None:
+        segformer_path = os.path.join(PROJECT_ROOT, "outputs/checkpoints/segformer_best.pth")
+        unet_path = os.path.join(PROJECT_ROOT, "outputs/checkpoints/unet_best.pth")
+        if os.path.exists(segformer_path):
+            ckpt_path = segformer_path
+            detected_model = "segformer"
+        else:
+            ckpt_path = unet_path
+            detected_model = "unet"
+    else:
+        ckpt_path = checkpoint_path
+        detected_model = None
+        
     if not os.path.exists(ckpt_path):
         raise FileNotFoundError(f"Model checkpoint not found at: {ckpt_path}")
         
-    model = build_unet(num_classes=3, pretrained=False)
+    name = (model_name or detected_model or "").lower()
+    if not name:
+        if "segformer" in ckpt_path.lower():
+            name = "segformer"
+        elif "deeplab" in ckpt_path.lower():
+            name = "deeplab"
+        elif "baseline" in ckpt_path.lower() or "cnn" in ckpt_path.lower():
+            name = "baseline_cnn"
+        else:
+            name = "unet"
+
+    if "segformer" in name:
+        variant = "b2" if "b2" in name else "b0"
+        model = build_segformer(num_classes=3, pretrained=False, variant=variant)
+    elif "deeplab" in name:
+        model = build_deeplabv3plus(num_classes=3, pretrained=False)
+    elif "baseline" in name:
+        model = build_baseline_cnn(num_classes=3)
+    else:
+        model = build_unet(num_classes=3, pretrained=False)
+        
     checkpoint = torch.load(ckpt_path, map_location=device)
     if "model_state_dict" in checkpoint:
         model.load_state_dict(checkpoint["model_state_dict"])
