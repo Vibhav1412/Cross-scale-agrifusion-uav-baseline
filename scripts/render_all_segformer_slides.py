@@ -176,7 +176,7 @@ def render_slide_13(dark=False):
          "#ecfdf5" if not dark else "#1e293b", "#10b981", "#047857" if not dark else "#34d399"),
         ("DECODER", "All-MLP lightweight decoder: multi-scale feature unification into 256 channels + Monte Carlo Dropout (p=0.2) for predictive entropy",
          "#eff6ff" if not dark else "#1e293b", "#0284c7", "#0369a1" if not dark else "#38bdf8"),
-        ("EFFICIENCY ADVANTAGE", "3.98M params (vs 14.33M U-Net, 72% reduction) | 13.17 ms CPU latency (2.7× faster) | 15.2 MB memory footprint",
+        ("EFFICIENCY ADVANTAGE (DAVID VS GOLIATH)", "3.98M params vs 43.88M (ResNet50, 11× smaller) & 14.33M (ResNet18, 72% ↓) | 13.96 ms CPU (7.1× faster than ResNet50 at 99.89 ms)",
          "#fef2f2" if not dark else "#1e293b", "#ef4444", "#b91c1c" if not dark else "#f87171"),
         ("PHASE-II SATELLITE BRIDGE", "Multi-Head Cross-Attention Adapter fusing Sentinel-2 10m/20m multi-spectral tokens (B2, B3, B4, B8, B8A) into UAV feature maps",
          "#fff7ed" if not dark else "#2a1b14", "#f97316", "#c2410c" if not dark else "#fb923c"),
@@ -336,7 +336,7 @@ def render_slide_14(dark=False):
          "#0284c7", "grid"),
         
         ("Proposed Primary Model (SegFormer MiT-B0)",
-         "Employs a modern Vision Transformer (NeurIPS 2021) with hierarchical Mix-Transformer encoder, overlapped patch merging, All-MLP decoder, and zero positional embeddings. Delivers 3.98M parameters (72% reduction vs U-Net) and 13.17 ms/patch CPU latency (2.7× faster).",
+         "Employs a modern Vision Transformer (NeurIPS 2021) with hierarchical Mix-Transformer encoder, All-MLP decoder, and zero positional embeddings. Outperforms ResNet18 and 43.88M-parameter ResNet50 (54.33% vs 51.10% mIoU) on held-out test data while running 7.1× faster with an 11× smaller memory footprint.",
          "#10b981", "brain"),
          
         ("Phase-II Cross-Scale Satellite Fusion Bridge",
@@ -414,7 +414,7 @@ def render_slide_15(dark=False):
     
     p1_bullets = [
         "End-to-End UAV Inference Engine: Real-time sliding-window patch inference (256×256, stride 192) on unseen field orthomosaics with whole-field mask reconstruction.",
-        "Empirical Multi-Model Benchmark: Modern SegFormer (MiT-B0) adopted as new primary model (3.98M params, 13.17 ms latency) benchmarked against ResNet18 U-Net (14.33M), DeepLabV3+ (26.74M), and Basic CNN (1.89M).",
+        "Empirical Multi-Model Benchmark: Modern SegFormer (MiT-B0, 54.33% mIoU, 3.98M params) evaluated against ResNet50 (51.10% mIoU, 43.88M), DeepLabV3+ (51.70%, 16.60M), ResNet18 (50.96%, 14.33M), and Basic CNN (42.27%, 0.80M).",
         "Trustworthy AI Diagnostic Suite: Live visual inspection of Class-Masked Grad-CAM leaf attributions and Monte Carlo Dropout (T = 8) predictive boundary entropy.",
         "Field Spatial Analytics & Relational Store: Dynamic N×N weed infestation risk zoning (Low, Moderate, High) backed by an SQLite audit database (agrifusion.db) with CSV export."
     ]
@@ -485,3 +485,4 @@ if __name__ == "__main__":
         render_slide_13(dark=dark)
         render_slide_14(dark=dark)
         render_slide_15(dark=dark)
+
