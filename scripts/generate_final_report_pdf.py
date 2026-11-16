@@ -2,6 +2,19 @@
 generate_final_report_pdf.py
 Generates an exhaustive, publication-grade academic PDF report documenting the entire
 Cross-Scale UAV-Satellite Data Fusion Capstone Project (PES University PW26_YBS_02).
+
+Includes:
+- Full system architecture & motivation
+- Comprehensive 5-model benchmark suite (Test mIoU, Dice, Crop/Weed IoU, latency, footprint)
+- SEPARATE Architecture & Computational Specifications Table (from Streamlit UI)
+- SEPARATE Individual Model Training Dynamics & Loss Convergence Graphs (SegFormer, ResNet50, ResNet18, DeepLabV3+, Basic CNN)
+- Leakage-free dataset splitting protocol (WeedMap)
+- Primary SegFormer (MiT-B0) design & Phase-II Satellite Fusion Adapter
+- Class-Masked Target Grad-CAM & Monte Carlo Dropout Uncertainty
+- 4-Tier Variable Rate Application (VRA) Prescription Engine & Economics
+- Commercial drone mission exports (DJI Agras CSV, GeoJSON, compliance cert)
+- PhenoBench (CVPR 2023) benchmark integration
+- Defense cheat sheet for review panel
 """
 
 import os
@@ -98,7 +111,7 @@ def build_pdf():
 
     styles = getSampleStyleSheet()
     
-    # Custom Palette
+    # Custom Academic Palette
     C_PRIMARY = colors.HexColor("#0f172a")     # Deep Slate 900
     C_SECONDARY = colors.HexColor("#0369a1")   # Deep Sky Blue
     C_ACCENT = colors.HexColor("#059669")      # Emerald 600
@@ -113,20 +126,19 @@ def build_pdf():
         'DocTitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=21,
-        leading=25,
+        fontSize=20,
+        leading=24,
         textColor=C_PRIMARY,
-        alignment=0,
         spaceAfter=4
     )
     subtitle_style = ParagraphStyle(
         'DocSubtitle',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=11,
-        leading=15,
+        fontSize=10.5,
+        leading=14,
         textColor=C_SECONDARY,
-        spaceAfter=12
+        spaceAfter=10
     )
     meta_style = ParagraphStyle(
         'DocMeta',
@@ -140,22 +152,22 @@ def build_pdf():
         'Heading1_Custom',
         parent=styles['Heading1'],
         fontName='Helvetica-Bold',
-        fontSize=13.5,
-        leading=17,
+        fontSize=13,
+        leading=16,
         textColor=C_PRIMARY,
-        spaceBefore=12,
-        spaceAfter=6,
+        spaceBefore=11,
+        spaceAfter=5,
         keepWithNext=True
     )
     h2_style = ParagraphStyle(
         'Heading2_Custom',
         parent=styles['Heading2'],
         fontName='Helvetica-Bold',
-        fontSize=10.5,
-        leading=14,
+        fontSize=10,
+        leading=13,
         textColor=C_SECONDARY,
-        spaceBefore=8,
-        spaceAfter=4,
+        spaceBefore=7,
+        spaceAfter=3,
         keepWithNext=True
     )
     body_style = ParagraphStyle(
@@ -163,14 +175,9 @@ def build_pdf():
         parent=styles['Normal'],
         fontName='Helvetica',
         fontSize=8.5,
-        leading=12,
+        leading=11.5,
         textColor=C_DARK,
-        spaceAfter=6
-    )
-    body_bold = ParagraphStyle(
-        'Body_Bold',
-        parent=body_style,
-        fontName='Helvetica-Bold'
+        spaceAfter=5
     )
     bullet_style = ParagraphStyle(
         'Bullet_Custom',
@@ -184,7 +191,7 @@ def build_pdf():
         parent=styles['Normal'],
         fontName='Helvetica',
         fontSize=8.5,
-        leading=12,
+        leading=11.5,
         textColor=C_DARK
     )
     table_cell = ParagraphStyle(
@@ -192,8 +199,13 @@ def build_pdf():
         parent=styles['Normal'],
         fontName='Helvetica',
         fontSize=7.5,
-        leading=10,
+        leading=9.5,
         textColor=C_DARK
+    )
+    table_cell_center = ParagraphStyle(
+        'TableCellCenter',
+        parent=table_cell,
+        alignment=1
     )
     table_cell_bold = ParagraphStyle(
         'TableCellBold',
@@ -201,12 +213,17 @@ def build_pdf():
         fontName='Helvetica-Bold',
         textColor=C_PRIMARY
     )
+    table_cell_bold_center = ParagraphStyle(
+        'TableCellBoldCenter',
+        parent=table_cell_bold,
+        alignment=1
+    )
     table_header = ParagraphStyle(
         'TableHeader',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
         fontSize=7.5,
-        leading=10,
+        leading=9.5,
         textColor=colors.white,
         alignment=1
     )
@@ -218,8 +235,8 @@ def build_pdf():
         leading=10,
         textColor=C_MUTED,
         alignment=1,
-        spaceBefore=3,
-        spaceAfter=8
+        spaceBefore=2,
+        spaceAfter=6
     )
 
     story = []
@@ -241,23 +258,23 @@ def build_pdf():
     meta_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), C_CARD_BG),
         ('BOX', (0,0), (-1,-1), 1, C_BORDER),
-        ('PADDING', (0,0), (-1,-1), 8),
+        ('PADDING', (0,0), (-1,-1), 7),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
     ]))
     story.append(meta_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
     # Executive Callout Box
     summary_box_data = [[
         Paragraph(
             "<b>EXECUTIVE SUMMARY & CORE RESEARCH HIGHLIGHTS:</b><br/>"
-            "This report documents the comprehensive research, architecture evolution, empirical benchmarks, and deployment artifacts "
-            "for Capstone Project <b>PW26_YBS_02</b>. Established initially as a ResNet18 U-Net baseline for UAV crop-weed segmentation, "
-            "the system has transitioned to <b>SegFormer (MiT-B0 Vision Transformer)</b> as the primary architecture based on review feedback. "
-            "SegFormer achieves <b>54.33% Test mIoU</b> (+3.37% over ResNet18, +3.23% over ResNet50) on strictly held-out UAV flights with only "
-            "<b>3.98M parameters</b> (11× smaller and 7.1× faster than ResNet50). The framework integrates <b>Class-Masked Grad-CAM</b>, "
-            "<b>Monte Carlo Dropout Predictive Entropy</b>, a commercial-grade <b>Variable Rate Application (VRA) Prescription Engine</b> saving "
-            "up to 88% chemical volume, an interactive <b>8-Tab Streamlit Dashboard</b>, and active integration with the <b>PhenoBench (CVPR 2023)</b> benchmark.",
+            "This report documents the comprehensive research, architecture evolution, empirical benchmarks, and deployment artifacts for "
+            "Capstone Project <b>PW26_YBS_02</b>. Established initially as a ResNet18 U-Net baseline for UAV crop-weed segmentation, the system "
+            "has transitioned to <b>SegFormer (MiT-B0 Vision Transformer)</b> as the primary architecture based on review feedback. SegFormer "
+            "achieves <b>54.33% Test mIoU</b> (+3.37% over ResNet18, +3.23% over ResNet50) on strictly held-out UAV flights with only <b>3.98M "
+            "parameters</b> (11× smaller and 7.1× faster than ResNet50). The framework integrates <b>Class-Masked Grad-CAM</b>, <b>Monte Carlo "
+            "Dropout Predictive Entropy</b>, a commercial-grade <b>Variable Rate Application (VRA) Prescription Engine</b> saving up to 88% "
+            "chemical volume, an interactive <b>8-Tab Streamlit Dashboard</b>, and active integration with the <b>PhenoBench (CVPR 2023)</b> benchmark.",
             callout_style
         )
     ]]
@@ -266,31 +283,31 @@ def build_pdf():
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f0fdf4")),
         ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#86efac")),
         ('LINELEFT', (0,0), (-1,-1), 4, C_ACCENT),
-        ('PADDING', (0,0), (-1,-1), 8),
+        ('PADDING', (0,0), (-1,-1), 7),
     ]))
     story.append(summary_box)
-    story.append(Spacer(1, 12))
+    story.append(Spacer(1, 8))
 
     # =========================================================================
     # SECTION 1: THE SCALE GAP & RESEARCH MOTIVATION
     # =========================================================================
     story.append(Paragraph("1. Research Motivation & The Remote Sensing Scale Gap", h1_style))
     story.append(Paragraph(
-        "Modern precision agriculture faces a fundamental operational trade-off in remote sensing imagery. "
-        "<b>Unmanned Aerial Vehicles (UAVs)</b> provide ultra-high spatial resolution (Ground Sampling Distance, GSD &approx; 1.0 cm/pixel), "
-        "enabling individual leaf segmentation, crop canopy inspection, and weed-seedling discrimination. However, UAV missions suffer "
-        "from strict battery limitations, small spatial footprints (&lt; 20 hectares per sortie), and high operational labor costs. "
-        "Conversely, <b>Earth Observation Satellites</b> (such as Copernicus Sentinel-2) provide continuous, synoptic regional coverage (10–30 m/pixel) "
-        "with short revisit intervals (5 days), but suffer from severe mixed-pixel spectral ambiguity where individual plants cannot be resolved.",
+        "Modern precision agriculture faces a fundamental operational trade-off in remote sensing imagery. <b>Unmanned Aerial Vehicles (UAVs)</b> "
+        "provide ultra-high spatial resolution (Ground Sampling Distance, GSD &approx; 1.0 cm/pixel), enabling individual leaf segmentation, crop "
+        "canopy inspection, and weed-seedling discrimination. However, UAV missions suffer from strict battery limitations, small spatial footprints "
+        "(&lt; 20 hectares per sortie), and high operational labor costs. Conversely, <b>Earth Observation Satellites</b> (such as Copernicus Sentinel-2) "
+        "provide continuous, synoptic regional coverage (10–30 m/pixel) with short revisit intervals (5 days), but suffer from severe mixed-pixel "
+        "spectral ambiguity where individual plants cannot be resolved.",
         body_style
     ))
     story.append(Paragraph(
-        "<b>The Capstone Objective:</b> Establish a centimetre-accurate UAV ground reference baseline and develop a modular "
-        "<b>Cross-Scale Attention Fusion Adapter</b> that bridges macro-scale satellite multi-spectral features with micro-scale UAV feature maps.",
+        "<b>The Capstone Objective:</b> Establish a centimetre-accurate UAV ground reference baseline and develop a modular <b>Cross-Scale Attention "
+        "Fusion Adapter</b> that bridges macro-scale satellite multi-spectral features with micro-scale UAV feature maps.",
         body_style
     ))
     
-    img_arch = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/system_architecture_block_diagram_slide.png"), target_width=510, max_height=200)
+    img_arch = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/system_architecture_block_diagram_slide.png"), target_width=510, max_height=185)
     if img_arch:
         story.append(img_arch)
         story.append(Paragraph("Figure 1: End-to-End System Architecture Block Diagram showing UAV pipeline, SegFormer core, Phase-II Satellite Adapter, and Actionable Farm Analytics.", caption_style))
@@ -298,7 +315,7 @@ def build_pdf():
     # =========================================================================
     # SECTION 2: ARCHITECTURAL EVOLUTION (WHAT CHANGED & WHY)
     # =========================================================================
-    story.append(Spacer(1, 6))
+    story.append(PageBreak())
     story.append(Paragraph("2. Architecture Evolution: What Changed Since Review 1", h1_style))
     story.append(Paragraph(
         "Following Review 1 with project mentor <b>Prof. Yoga B S</b>, the panel recommended upgrading beyond legacy CNN backbones (ResNet18) "
@@ -366,7 +383,7 @@ def build_pdf():
         ('PADDING', (0,0), (-1,-1), 4),
     ]))
     story.append(t_evo)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 8))
 
     # =========================================================================
     # SECTION 3: THE 5-MODEL BENCHMARK SUITE & DAVID VS GOLIATH STUDY
@@ -375,7 +392,7 @@ def build_pdf():
     story.append(Paragraph("3. Empirical Benchmark Suite & The 'David vs. Goliath' Study", h1_style))
     story.append(Paragraph(
         "To rigorously validate the new architecture, all five deep learning models were trained and evaluated under strictly identical conditions "
-        "on the held-out test split (Flight `003`, 149 unseen tiles, 9,704,970 test pixels). Table 2 presents the definitive quantitative benchmark:",
+        "on the held-out test split (Flight `003`, 149 unseen tiles, 9,704,970 test pixels). Table 2 presents the test generalization metrics:",
         body_style
     ))
 
@@ -393,58 +410,58 @@ def build_pdf():
         ],
         [
             Paragraph("<b>SegFormer (MiT-B0) [Primary]</b>", table_cell_bold),
-            Paragraph("<b>3.98 M</b>", table_cell),
-            Paragraph("<b>15.20 MB</b>", table_cell),
-            Paragraph("<b>13.96 ms</b>", table_cell),
-            Paragraph("<b>54.34%</b>", table_cell),
-            Paragraph("<b>54.33%</b>", table_cell_bold),
-            Paragraph("<b>42.13%</b>", table_cell_bold),
-            Paragraph("<b>23.44%</b>", table_cell),
-            Paragraph("<b>65.32%</b>", table_cell_bold)
+            Paragraph("<b>3.98 M</b>", table_cell_center),
+            Paragraph("<b>15.20 MB</b>", table_cell_center),
+            Paragraph("<b>13.96 ms</b>", table_cell_center),
+            Paragraph("<b>54.34%</b>", table_cell_center),
+            Paragraph("<b>54.33%</b>", table_cell_bold_center),
+            Paragraph("<b>42.13%</b>", table_cell_bold_center),
+            Paragraph("<b>23.44%</b>", table_cell_center),
+            Paragraph("<b>65.32%</b>", table_cell_bold_center)
         ],
         [
             Paragraph("ResNet50 U-Net [Heavy Baseline]", table_cell),
-            Paragraph("43.88 M", table_cell),
-            Paragraph("167.39 MB", table_cell),
-            Paragraph("99.89 ms", table_cell),
-            Paragraph("60.48%", table_cell),
-            Paragraph("51.10%", table_cell),
-            Paragraph("36.76%", table_cell),
-            Paragraph("20.10%", table_cell),
-            Paragraph("61.80%", table_cell)
+            Paragraph("43.88 M", table_cell_center),
+            Paragraph("167.39 MB", table_cell_center),
+            Paragraph("99.89 ms", table_cell_center),
+            Paragraph("60.48%", table_cell_center),
+            Paragraph("51.10%", table_cell_center),
+            Paragraph("36.76%", table_cell_center),
+            Paragraph("20.10%", table_cell_center),
+            Paragraph("61.80%", table_cell_center)
         ],
         [
             Paragraph("DeepLabV3+ (ResNet18)", table_cell),
-            Paragraph("16.60 M", table_cell),
-            Paragraph("63.34 MB", table_cell),
-            Paragraph("34.34 ms", table_cell),
-            Paragraph("52.40%", table_cell),
-            Paragraph("51.70%", table_cell),
-            Paragraph("41.11%", table_cell),
-            Paragraph("17.73%", table_cell),
-            Paragraph("62.16%", table_cell)
+            Paragraph("16.60 M", table_cell_center),
+            Paragraph("63.34 MB", table_cell_center),
+            Paragraph("34.34 ms", table_cell_center),
+            Paragraph("52.40%", table_cell_center),
+            Paragraph("51.70%", table_cell_center),
+            Paragraph("41.11%", table_cell_center),
+            Paragraph("17.73%", table_cell_center),
+            Paragraph("62.16%", table_cell_center)
         ],
         [
             Paragraph("ResNet18 U-Net [Phase-I Baseline]", table_cell),
-            Paragraph("14.33 M", table_cell),
-            Paragraph("54.67 MB", table_cell),
-            Paragraph("34.80 ms", table_cell),
-            Paragraph("56.45%", table_cell),
-            Paragraph("50.96%", table_cell),
-            Paragraph("28.96%", table_cell),
-            Paragraph("26.01%", table_cell),
-            Paragraph("61.72%", table_cell)
+            Paragraph("14.33 M", table_cell_center),
+            Paragraph("54.67 MB", table_cell_center),
+            Paragraph("34.80 ms", table_cell_center),
+            Paragraph("56.45%", table_cell_center),
+            Paragraph("50.96%", table_cell_center),
+            Paragraph("28.96%", table_cell_center),
+            Paragraph("26.01%", table_cell_center),
+            Paragraph("61.72%", table_cell_center)
         ],
         [
             Paragraph("Basic CNN Segmenter", table_cell),
-            Paragraph("0.80 M", table_cell),
-            Paragraph("3.06 MB", table_cell),
-            Paragraph("35.29 ms", table_cell),
-            Paragraph("43.10%", table_cell),
-            Paragraph("42.27%", table_cell),
-            Paragraph("20.83%", table_cell),
-            Paragraph("10.81%", table_cell),
-            Paragraph("50.50%", table_cell)
+            Paragraph("0.80 M", table_cell_center),
+            Paragraph("3.06 MB", table_cell_center),
+            Paragraph("35.29 ms", table_cell_center),
+            Paragraph("43.10%", table_cell_center),
+            Paragraph("42.27%", table_cell_center),
+            Paragraph("20.83%", table_cell_center),
+            Paragraph("10.81%", table_cell_center),
+            Paragraph("50.50%", table_cell_center)
         ]
     ]
     t_bench = Table(benchmark_table_data, colWidths=[120, 42, 48, 52, 46, 50, 50, 50, 52])
@@ -452,12 +469,82 @@ def build_pdf():
         ('BACKGROUND', (0,0), (-1,0), C_PRIMARY),
         ('GRID', (0,0), (-1,-1), 0.5, C_BORDER),
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor("#f0fdf4"), colors.white, C_CARD_BG, colors.white, C_CARD_BG]),
-        ('ALIGN', (1,1), (-1,-1), 'CENTER'),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('PADDING', (0,0), (-1,-1), 4),
+        ('PADDING', (0,0), (-1,-1), 3.5),
     ]))
     story.append(t_bench)
     story.append(Spacer(1, 8))
+
+    # -------------------------------------------------------------------------
+    # NEW SEPARATE TABLE: ARCHITECTURE & COMPUTATIONAL SPECIFICATIONS
+    # -------------------------------------------------------------------------
+    story.append(Paragraph("<b>Table 3: Architecture & Computational Specifications</b>", h2_style))
+    story.append(Paragraph(
+        "Profiles the exact computational memory footprint, parameter counts, batch inference latency ($B=4$), single-image inference latency, "
+        "and output tensor resolutions for autonomous edge deployment:",
+        body_style
+    ))
+
+    specs_table_data = [
+        [
+            Paragraph("Architecture", table_header),
+            Paragraph("Parameters (M)", table_header),
+            Paragraph("Size (MB)", table_header),
+            Paragraph("Latency B=4 (ms)", table_header),
+            Paragraph("Per-Image Latency (ms)", table_header),
+            Paragraph("Output Resolution", table_header)
+        ],
+        [
+            Paragraph("<b>SegFormer (MiT-B0) [New Primary Proposed]</b>", table_cell_bold),
+            Paragraph("<b>3.98</b>", table_cell_bold_center),
+            Paragraph("<b>15.20</b>", table_cell_bold_center),
+            Paragraph("<b>55.85</b>", table_cell_bold_center),
+            Paragraph("<b>13.96</b>", table_cell_bold_center),
+            Paragraph("256 &times; 256 &times; 3", table_cell_center)
+        ],
+        [
+            Paragraph("U-Net (ResNet50) [Heavyweight Baseline]", table_cell),
+            Paragraph("43.88", table_cell_center),
+            Paragraph("167.39", table_cell_center),
+            Paragraph("399.54", table_cell_center),
+            Paragraph("99.89", table_cell_center),
+            Paragraph("256 &times; 256 &times; 3", table_cell_center)
+        ],
+        [
+            Paragraph("U-Net (ResNet18) [Phase-I Baseline]", table_cell),
+            Paragraph("14.33", table_cell_center),
+            Paragraph("54.67", table_cell_center),
+            Paragraph("134.09", table_cell_center),
+            Paragraph("33.52", table_cell_center),
+            Paragraph("256 &times; 256 &times; 3", table_cell_center)
+        ],
+        [
+            Paragraph("DeepLabV3+ (ResNet18)", table_cell),
+            Paragraph("16.60", table_cell_center),
+            Paragraph("63.34", table_cell_center),
+            Paragraph("148.66", table_cell_center),
+            Paragraph("37.16", table_cell_center),
+            Paragraph("256 &times; 256 &times; 3", table_cell_center)
+        ],
+        [
+            Paragraph("Basic CNN Segmenter", table_cell),
+            Paragraph("0.80", table_cell_center),
+            Paragraph("3.06", table_cell_center),
+            Paragraph("140.10", table_cell_center),
+            Paragraph("35.03", table_cell_center),
+            Paragraph("256 &times; 256 &times; 3", table_cell_center)
+        ]
+    ]
+    t_specs = Table(specs_table_data, colWidths=[175, 65, 60, 70, 70, 70])
+    t_specs.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), C_PRIMARY),
+        ('GRID', (0,0), (-1,-1), 0.5, C_BORDER),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.HexColor("#f0fdf4"), colors.white, C_CARD_BG, colors.white, C_CARD_BG]),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('PADDING', (0,0), (-1,-1), 3.5),
+    ]))
+    story.append(t_specs)
+    story.append(Spacer(1, 6))
 
     # Narrative on David vs Goliath
     story.append(Paragraph("<b>The 'David vs. Goliath' Empirical Proof:</b>", h2_style))
@@ -473,15 +560,95 @@ def build_pdf():
         body_style
     ))
 
-    img_bar = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/graphs/models_comparison_barchart.png"), target_width=510, max_height=170)
+    img_bar = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/graphs/models_comparison_barchart.png"), target_width=510, max_height=145)
     if img_bar:
         story.append(img_bar)
         story.append(Paragraph("Figure 2: Empirical Benchmark comparison across all 5 architectures on held-out Flight 003 test tiles.", caption_style))
 
     # =========================================================================
+    # SECTION 3.1: SEPARATE INDIVIDUAL MODEL TRAINING DYNAMICS & LOSS CONVERGENCE
+    # =========================================================================
+    story.append(PageBreak())
+    story.append(Paragraph("3.1 Individual Model Training Dynamics & Loss Convergence", h1_style))
+    story.append(Paragraph(
+        "Each architecture was trained across 10 epochs using identical optimization schemes (Adam optimizer, Cosine Annealing learning rate schedule, "
+        "and normalized median frequency balancing hybrid loss). Below are the individual training and validation convergence dynamics for each model:",
+        body_style
+    ))
+
+    # Model 1: SegFormer (MiT-B0)
+    story.append(Paragraph("<b>(a) SegFormer (MiT-B0) [Primary Proposed Architecture]</b>", h2_style))
+    story.append(Paragraph(
+        "SegFormer exhibits rapid loss descent and stable multi-class validation metric progression. The pre-trained Mix-Transformer backbone provides "
+        "rich visual feature priors, enabling crop IoU to saturate above 42% by Epoch 6 while maintaining smooth loss decay without overfitting.",
+        body_style
+    ))
+    img_seg_curve = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/graphs/segformer_training_curves.png"), target_width=500, max_height=165)
+    if img_seg_curve:
+        story.append(img_seg_curve)
+        story.append(Paragraph("Figure 3a: SegFormer (MiT-B0) Training Loss (left) and Validation mIoU / Crop IoU / Weed IoU progression (right) across 10 epochs.", caption_style))
+
+    story.append(Spacer(1, 6))
+
+    # Model 2: ResNet50 U-Net
+    story.append(Paragraph("<b>(b) U-Net (ResNet50) [Heavyweight Comparative Baseline]</b>", h2_style))
+    story.append(Paragraph(
+        "ResNet50 reaches low training loss (0.5099) and high in-domain validation mIoU (60.48%), but suffers an acute generalization drop on unseen "
+        "held-out Flight 003 (51.10% Test mIoU). Its 43.88M parameters overfit to field-specific soil textures, confirming the limitations of convolutional depth scaling.",
+        body_style
+    ))
+    img_r50_curve = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/graphs/resnet50_training_curves.png"), target_width=500, max_height=165)
+    if img_r50_curve:
+        story.append(img_r50_curve)
+        story.append(Paragraph("Figure 3b: ResNet50 U-Net Training Loss (left) and Validation mIoU / Crop IoU / Weed IoU progression (right) across 10 epochs.", caption_style))
+
+    story.append(PageBreak())
+
+    # Model 3: ResNet18 U-Net
+    story.append(Paragraph("<b>(c) U-Net (ResNet18) [Phase-I Baseline]</b>", h2_style))
+    story.append(Paragraph(
+        "ResNet18 U-Net converges smoothly within 10 epochs, balancing crop and weed learning via hierarchical skip connections. However, its local "
+        "receptive field plateaus around 50.96% test mIoU, struggling with fragmented weed foliage between crop rows.",
+        body_style
+    ))
+    img_unet_curve = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/graphs/unet_training_curves.png"), target_width=500, max_height=165)
+    if img_unet_curve:
+        story.append(img_unet_curve)
+        story.append(Paragraph("Figure 3c: ResNet18 U-Net Training Loss (left) and Validation mIoU / Crop IoU / Weed IoU progression (right) across 10 epochs.", caption_style))
+
+    story.append(Spacer(1, 6))
+
+    # Model 4: DeepLabV3+
+    story.append(Paragraph("<b>(d) DeepLabV3+ (ResNet18) [Atrous Spatial Pyramid Pooling]</b>", h2_style))
+    story.append(Paragraph(
+        "DeepLabV3+ leverages multi-rate dilated convolutions (ASPP) to capture broad crop canopy context (achieving 41.11% Crop IoU). However, "
+        "dilated filters cause gridding artifacts on sub-centimeter weed pixels, capping weed IoU at 17.73%.",
+        body_style
+    ))
+    img_deep_curve = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/graphs/deeplab_training_curves.png"), target_width=500, max_height=165)
+    if img_deep_curve:
+        story.append(img_deep_curve)
+        story.append(Paragraph("Figure 3d: DeepLabV3+ Training Loss (left) and Validation mIoU / Crop IoU / Weed IoU progression (right) across 10 epochs.", caption_style))
+
+    story.append(PageBreak())
+
+    # Model 5: Basic CNN Segmenter
+    story.append(Paragraph("<b>(e) Basic CNN Segmenter [Ablation Reference Baseline]</b>", h2_style))
+    story.append(Paragraph(
+        "Lacking multi-scale skip connections or attention mechanisms, the Basic CNN segmenter suffers severe semantic degradation during bottleneck "
+        "downsampling. Weed IoU reaches only 10.81%, demonstrating the critical necessity of advanced multi-scale feature aggregation.",
+        body_style
+    ))
+    img_cnn_curve = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/graphs/baseline_cnn_training_curves.png"), target_width=500, max_height=165)
+    if img_cnn_curve:
+        story.append(img_cnn_curve)
+        story.append(Paragraph("Figure 3e: Basic CNN Segmenter Training Loss (left) and Validation mIoU / Crop IoU / Weed IoU progression (right) across 10 epochs.", caption_style))
+
+    story.append(Spacer(1, 8))
+
+    # =========================================================================
     # SECTION 4: DATASET & LEAKAGE-FREE SPLITTING PROTOCOL
     # =========================================================================
-    story.append(Spacer(1, 6))
     story.append(Paragraph("4. Dataset & Leakage-Free Geographic Splitting Protocol", h1_style))
     story.append(Paragraph(
         "To prevent spatial data leakage and biased evaluation, tiles from the <b>WeedMap</b> benchmark (Sa et al., MDPI Remote Sensing 2018) "
@@ -502,25 +669,25 @@ def build_pdf():
         [
             Paragraph("<b>Training Set</b>", table_cell_bold),
             Paragraph("Flight 000, 002, 004", table_cell),
-            Paragraph("368 tiles", table_cell),
-            Paragraph("57.6%", table_cell),
-            Paragraph("63,590,400 px", table_cell),
+            Paragraph("368 tiles", table_cell_center),
+            Paragraph("57.6%", table_cell_center),
+            Paragraph("63,590,400 px", table_cell_center),
             Paragraph("Baseline multi-condition learning across multiple dates and sun angles.", table_cell)
         ],
         [
             Paragraph("<b>Validation Set</b>", table_cell_bold),
             Paragraph("Flight 001", table_cell),
-            Paragraph("122 tiles", table_cell),
-            Paragraph("19.1%", table_cell),
-            Paragraph("21,081,600 px", table_cell),
+            Paragraph("122 tiles", table_cell_center),
+            Paragraph("19.1%", table_cell_center),
+            Paragraph("21,081,600 px", table_cell_center),
             Paragraph("Hyperparameter tuning, early stopping, and checkpoint selection.", table_cell)
         ],
         [
             Paragraph("<b>Held-Out Test Set</b>", table_cell_bold),
             Paragraph("<b>Flight 003</b>", table_cell_bold),
-            Paragraph("149 tiles", table_cell),
-            Paragraph("23.3%", table_cell),
-            Paragraph("25,747,200 px", table_cell),
+            Paragraph("149 tiles", table_cell_bold_center),
+            Paragraph("23.3%", table_cell_bold_center),
+            Paragraph("25,747,200 px", table_cell_bold_center),
             Paragraph("<b>Strictly unseen flight campaign</b> for cross-field domain generalization.", table_cell)
         ]
     ]
@@ -559,10 +726,10 @@ def build_pdf():
     story.append(Paragraph("• <b>Sequence Reduction Attention (SRA):</b> Reduces the spatial dimension of key and value vectors by a reduction ratio <i>R</i>, slashing multi-head self-attention computational complexity from <i>O(N<sup>2</sup>)</i> to <i>O(N<sup>2</sup>/R)</i>.", bullet_style))
     story.append(Paragraph("• <b>Lightweight All-MLP Decoder:</b> Unifies multi-level feature channels via standard MLP layers and upsamples them to <i>H/4 &times; W/4</i>, avoiding heavy deconvolutional decoders and enabling real-time CPU execution (13.96 ms).", bullet_style))
 
-    img_seg = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/segformer_architecture_detail_slide.png"), target_width=510, max_height=190)
+    img_seg = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/segformer_architecture_detail_slide.png"), target_width=510, max_height=185)
     if img_seg:
         story.append(img_seg)
-        story.append(Paragraph("Figure 3: SegFormer (MiT-B0) architectural pipeline with Hierarchical Encoder, SRA, All-MLP Decoder, and Phase-II Satellite Adapter.", caption_style))
+        story.append(Paragraph("Figure 4: SegFormer (MiT-B0) architectural pipeline with Hierarchical Encoder, SRA, All-MLP Decoder, and Phase-II Satellite Adapter.", caption_style))
 
     story.append(Spacer(1, 4))
     story.append(Paragraph("<b>Phase-II Cross-Scale Satellite Fusion Adapter:</b>", h2_style))
@@ -600,15 +767,15 @@ def build_pdf():
         body_style
     ))
 
-    img_xai = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/gradcam_sample_explanation.png"), target_width=510, max_height=130)
+    img_xai = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/gradcam_sample_explanation.png"), target_width=510, max_height=125)
     if img_xai:
         story.append(img_xai)
-        story.append(Paragraph("Figure 4: Class-Masked Grad-CAM verifying distinct physiological activations for Sugar Beet (Crop) vs. Weeds.", caption_style))
+        story.append(Paragraph("Figure 5: Class-Masked Grad-CAM verifying distinct physiological activations for Sugar Beet (Crop) vs. Weeds.", caption_style))
 
-    img_unc = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/mc_dropout_uncertainty_sample.png"), target_width=510, max_height=130)
+    img_unc = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/mc_dropout_uncertainty_sample.png"), target_width=510, max_height=125)
     if img_unc:
         story.append(img_unc)
-        story.append(Paragraph("Figure 5: Monte Carlo Dropout Uncertainty (Predictive Entropy Map) identifying high-risk decision boundaries.", caption_style))
+        story.append(Paragraph("Figure 6: Monte Carlo Dropout Uncertainty (Predictive Entropy Map) identifying high-risk decision boundaries.", caption_style))
 
     # =========================================================================
     # SECTION 7: PRECISION PRESCRIPTION & HERBICIDE COST-SAVINGS (VRA)
@@ -622,7 +789,6 @@ def build_pdf():
         body_style
     ))
 
-    # 4-Tier Prescription Table
     tier_table_data = [
         [
             Paragraph("Tier", table_header),
@@ -638,8 +804,8 @@ def build_pdf():
             Paragraph("<b>Zero-Spray Zone</b>", table_cell_bold),
             Paragraph("0.0% &ndash; 1.0%", table_cell),
             Paragraph("<font color='#16a34a'><b>OFF (Complete Shutoff)</b></font>", table_cell),
-            Paragraph("0%", table_cell),
-            Paragraph("0.0&times; (0 L/ha)", table_cell),
+            Paragraph("0%", table_cell_center),
+            Paragraph("0.0&times; (0 L/ha)", table_cell_center),
             Paragraph("Healthy crop/clean soil; chemical discharge prohibited.", table_cell)
         ],
         [
@@ -647,8 +813,8 @@ def build_pdf():
             Paragraph("Micro-Pulse Targeted", table_cell),
             Paragraph("1.0% &ndash; 5.0%", table_cell),
             Paragraph("Pulsed Micro-Dose", table_cell),
-            Paragraph("30%", table_cell),
-            Paragraph("0.3&times; (60 L/ha)", table_cell),
+            Paragraph("30%", table_cell_center),
+            Paragraph("0.3&times; (60 L/ha)", table_cell_center),
             Paragraph("Early-stage emergent weeds; low-volume spot-suppression.", table_cell)
         ],
         [
@@ -656,8 +822,8 @@ def build_pdf():
             Paragraph("Moderate Standard", table_cell),
             Paragraph("5.0% &ndash; 15.0%", table_cell),
             Paragraph("Continuous Active", table_cell),
-            Paragraph("70%", table_cell),
-            Paragraph("0.7&times; (140 L/ha)", table_cell),
+            Paragraph("70%", table_cell_center),
+            Paragraph("0.7&times; (140 L/ha)", table_cell_center),
             Paragraph("Established inter-row weed clusters; targeted eradication.", table_cell)
         ],
         [
@@ -665,8 +831,8 @@ def build_pdf():
             Paragraph("<font color='#dc2626'><b>Curative Maximum</b></font>", table_cell_bold),
             Paragraph("&gt; 15.0%", table_cell),
             Paragraph("Full-Throttle Flow", table_cell),
-            Paragraph("100%", table_cell),
-            Paragraph("1.0&times; (200 L/ha)", table_cell),
+            Paragraph("100%", table_cell_center),
+            Paragraph("1.0&times; (200 L/ha)", table_cell_center),
             Paragraph("Heavy localized infestation; maximum curative dosage.", table_cell)
         ]
     ]
@@ -696,7 +862,7 @@ def build_pdf():
     img_presc = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/cli_prescription_map.png"), target_width=510, max_height=160)
     if img_presc:
         story.append(img_presc)
-        story.append(Paragraph("Figure 6: Multi-Panel Autonomous Prescription Report: RGB Aerial Tile (left), Continuous Weed Density Heatmap (middle), and 4-Color Actuation Grid with Economic KPI summary (right).", caption_style))
+        story.append(Paragraph("Figure 7: Multi-Panel Autonomous Prescription Report: RGB Aerial Tile (left), Continuous Weed Density Heatmap (middle), and 4-Color Actuation Grid with Economic KPI summary (right).", caption_style))
 
     story.append(Paragraph(
         "<b>Commercial Autonomous Drone Export Formats:</b><br/>"
@@ -771,10 +937,10 @@ def build_pdf():
     story.append(Spacer(1, 8))
 
     # Gallery of predictions
-    img_gal = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/predictions/segformer_test_predictions_gallery.png"), target_width=510, max_height=220)
+    img_gal = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/predictions/segformer_test_predictions_gallery.png"), target_width=510, max_height=215)
     if img_gal:
         story.append(img_gal)
-        story.append(Paragraph("Figure 7: SegFormer (MiT-B0) Qualitative Prediction Gallery on held-out test tiles (Flight 003): Input RGB (left), Ground Truth (middle), Predicted Mask (right).", caption_style))
+        story.append(Paragraph("Figure 8: SegFormer (MiT-B0) Qualitative Prediction Gallery on held-out test tiles (Flight 003): Input RGB (left), Ground Truth (middle), Predicted Mask (right).", caption_style))
 
     # =========================================================================
     # SECTION 9: PHENOBENCH INTEGRATION & FUTURE ROADMAP
@@ -796,10 +962,10 @@ def build_pdf():
         body_style
     ))
 
-    img_road = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/further_implementation_roadmap_slide.png"), target_width=510, max_height=180)
+    img_road = get_proportional_image(os.path.join(PROJECT_ROOT, "outputs/reports/further_implementation_roadmap_slide.png"), target_width=510, max_height=175)
     if img_road:
         story.append(img_road)
-        story.append(Paragraph("Figure 8: Future Implementation Roadmap showing Phase-II Multi-Modal Satellite Fusion, Multi-Crop Expansion (Wheat & Rice), and Edge TPU Deployment.", caption_style))
+        story.append(Paragraph("Figure 9: Future Implementation Roadmap showing Phase-II Multi-Modal Satellite Fusion, Multi-Crop Expansion (Wheat & Rice), and Edge TPU Deployment.", caption_style))
 
     # =========================================================================
     # SECTION 10: DEFENSE GUIDE & FREQUENTLY ASKED QUESTIONS
@@ -841,4 +1007,3 @@ def build_pdf():
 
 if __name__ == "__main__":
     build_pdf()
-
