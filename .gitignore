@@ -30,6 +30,13 @@ outputs/checkpoints/*.pt
 outputs/checkpoints/*.bin
 outputs/checkpoints/*.onnx
 
+# Datasets and archives (>100MB violates GitHub push limit)
+data/raw/
+data/processed/
+*.zip
+*.tar.gz
+*.tar
+
 # Allow tracking the folder
 !outputs/checkpoints/.gitkeep
 
