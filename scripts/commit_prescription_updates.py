@@ -32,3 +32,4 @@ for file_path, msg in commits:
             print(f"[SKIP] No changes staged for {file_path}")
     else:
         print(f"[WARN] File not found: {file_path}")
+
